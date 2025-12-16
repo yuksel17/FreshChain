@@ -1,0 +1,169 @@
+/* src/App.css */
+
+/* --- KRİTİK DÜZELTME: Ekranı tamamen kaplama --- */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* --- Genel Stil ve Arka Plan --- */
+.App {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+  min-height: 100vh;
+  background-color: #f8f8f8; /* Açık gri arka plan */
+  color: #333;
+}
+
+header {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+h1 {
+  color: #4CAF50; /* Yeşil Başlık */
+  margin-bottom: 10px;
+}
+
+/* --- Bağlantı ve Durum Mesajları --- */
+button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+button:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.status-message {
+  color: #333;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* --- Rol Seçimi --- */
+.role-selector {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #e8f5e9; /* Açık yeşil arka plan */
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.role-selector select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  margin-left: 10px;
+}
+
+/* --- Genel Panel Stilleri --- */
+.panel {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px auto;
+  max-width: 600px;
+}
+
+.panel h3 {
+  color: #388e3c; /* Koyu yeşil panel başlığı */
+  margin-bottom: 25px;
+  border-bottom: 2px solid #a5d6a7;
+  padding-bottom: 10px;
+}
+
+/* --- Form Girişleri --- */
+input[type="text"],
+input[type="number"],
+.panel select {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin: 10px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* --- Admin Butonları (Yanyana) --- */
+.admin-panel button {
+  width: 30%; /* Üç buton sığdırmak için */
+  margin: 5px;
+  background-color: #1e88e5; /* Mavi tonları */
+}
+.admin-panel button:hover {
+  background-color: #1565c0;
+}
+
+/* --- Üretici Paneli (QR Kod Kutusu) --- */
+.producer-panel button {
+  background-color: #388e3c; /* Daha belirgin yeşil */
+  width: 100%;
+}
+.producer-panel button:hover {
+  background-color: #2e7d32;
+}
+
+.qr-box {
+  border: 2px dashed #4CAF50;
+  padding: 20px;
+  margin-top: 30px;
+  background-color: #e8f5e9;
+  border-radius: 8px;
+}
+
+.qr-box p {
+  margin: 5px 0;
+}
+
+/* --- Müşteri Paneli (Sonuç) --- */
+.customer-panel button {
+  width: 100%;
+}
+
+.history-result {
+  text-align: left;
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.history-result h4 {
+  color: #4CAF50;
+  border-bottom: 1px dashed #ddd;
+  padding-bottom: 10px;
+}
+
+.sensor-log {
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  border-left: 4px solid #fbc02d; /* Sarı çizgi */
+}
