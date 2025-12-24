@@ -28,7 +28,7 @@ const shortAddr = (a) => (!a ? "-" : `${a.slice(0, 6)}...${a.slice(-4)}`);
 
 export default function App() {
   // --- LOGIN ---
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // hocan login istiyor demiştin; istersen true bırak
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [loginRole, setLoginRole] = useState("producer");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +46,6 @@ export default function App() {
   const [busy, setBusy] = useState(false);
 
   // --- ADMIN inputs ---
-  // (hocanın “ID/PASSWORD” istediği yere uygun olsun diye adresleri prompt ile aldırıyorum)
   const [adminLastAdded, setAdminLastAdded] = useState("");
 
   // --- PRODUCER ---
@@ -61,7 +60,7 @@ export default function App() {
   const [hum, setHum] = useState("20");
   const [location, setLocation] = useState("Bursa");
 
-  // --- TRANSFER (producer->transporter / transporter->distributor / distributor->retailer) ---
+  // --- TRANSFER ---
   const [xBatchId, setXBatchId] = useState("");
   const [toAddr, setToAddr] = useState(ACCOUNTS.transporter);
 
@@ -79,7 +78,7 @@ export default function App() {
     if (role === "transporter") return ACCOUNTS.transporter;
     if (role === "distributor") return ACCOUNTS.distributor;
     if (role === "retailer") return ACCOUNTS.retailer;
-    return ""; // customer
+    return "";
   }, [role]);
 
   // Role'a göre transfer hedefini otomatik seç
@@ -88,6 +87,18 @@ export default function App() {
     if (role === "transporter") setToAddr(ACCOUNTS.distributor);
     if (role === "distributor") setToAddr(ACCOUNTS.retailer);
   }, [role]);
+
+  // ✅ QR ile gelindiyse (?batchId=123) → customer moduna geç + otomatik history çek
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bid = params.get("batchId");
+    if (bid) {
+      setRole("customer");
+      setHistoryId(bid);
+      getHistory(bid);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const contractRead = useMemo(() => {
     if (!provider) return null;
@@ -163,7 +174,7 @@ export default function App() {
     try {
       setBusy(true);
       setStatus("⏳ MetaMask onayı bekleniyor...");
-      const tx = await txPromise; // burada MetaMask popup açılır
+      const tx = await txPromise;
       setStatus(`⛓️ İşlem gönderildi: ${tx.hash}`);
       await tx.wait();
       setStatus(`✅ ${okMsg}`);
@@ -202,7 +213,9 @@ export default function App() {
       return false;
     }
     if (role !== "customer" && expectedAddr && lower(connectedAddr) !== lower(expectedAddr)) {
-      setStatus(`❌ Yanlış MetaMask hesabı açık. Beklenen: ${shortAddr(expectedAddr)} | Açık: ${shortAddr(connectedAddr)}`);
+      setStatus(
+        `❌ Yanlış MetaMask hesabı açık. Beklenen: ${shortAddr(expectedAddr)} | Açık: ${shortAddr(connectedAddr)}`
+      );
       return false;
     }
     return true;
@@ -214,7 +227,7 @@ export default function App() {
     if (!requireRoleWallet()) return;
 
     const addr = askAddress(`${ROLE_LABEL.admin} - ${kind} adresini gir:`, "");
-    if (addr === null) return; // iptal
+    if (addr === null) return;
     if (!addr) return setStatus("❌ Adres boş olamaz.");
     if (!ethers.isAddress(addr)) return setStatus("❌ Geçersiz adres.");
 
@@ -271,26 +284,22 @@ export default function App() {
     if (!xBatchId) return setStatus("❌ Batch ID gir.");
     if (!ethers.isAddress(toAddr)) return setStatus("❌ Hedef adres geçersiz.");
 
-    // 1) currentOwner kontrol et (revert yerine net mesaj)
     try {
-      const b = await contractRead.batches(BigInt(xBatchId)); // ABI'de var :contentReference[oaicite:1]{index=1}
+      const b = await contractRead.batches(BigInt(xBatchId));
       const currentOwner = b?.currentOwner || b?.[4];
       const exists = b?.exists ?? b?.[7];
 
       if (exists === false) return setStatus("❌ Bu Batch ID yok (exists=false).");
       if (lower(currentOwner) !== lower(connectedAddr)) {
-        return setStatus(`❌ Bu batch'in sahibi sen değilsin. CurrentOwner: ${shortAddr(currentOwner)} | Sen: ${shortAddr(connectedAddr)}`);
+        return setStatus(
+          `❌ Bu batch'in sahibi sen değilsin. CurrentOwner: ${shortAddr(currentOwner)} | Sen: ${shortAddr(connectedAddr)}`
+        );
       }
-    } catch (e) {
-      // batches() çağrısı ABI mismatch ise burada yakalar
+    } catch {
       return setStatus("❌ batches() okunamadı. ABI'yi kontrol et (batches view olmalı).");
     }
 
-    // 2) TX gönder (burada MetaMask popup açılır)
-    await runTx(
-      contractWrite.transferOwnership(BigInt(xBatchId), toAddr),
-      "Sahiplik devri yapıldı."
-    );
+    await runTx(contractWrite.transferOwnership(BigInt(xBatchId), toAddr), "Sahiplik devri yapıldı.");
   }
 
   // --- RETAILER: markAsArrived ---
@@ -299,10 +308,7 @@ export default function App() {
     if (!requireRoleWallet()) return;
     if (!rBatchId) return setStatus("❌ Batch ID gir.");
 
-    await runTx(
-      contractWrite.markAsArrived(BigInt(rBatchId), passedInspection),
-      "Market varış / kontrol kaydedildi."
-    );
+    await runTx(contractWrite.markAsArrived(BigInt(rBatchId), passedInspection), "Market varış / kontrol kaydedildi.");
   }
 
   // --- CUSTOMER: getBatchHistory ---
@@ -359,7 +365,6 @@ export default function App() {
     }
   }
 
-  // QR değeri: customer sayfası batchId ile history çağıracak şekilde
   const qrValue = useMemo(() => {
     if (!createdBatchId) return "";
     return String(createdBatchId);
@@ -369,7 +374,6 @@ export default function App() {
     <div className="page">
       <h1 className="title">FreshChain Dashboard</h1>
 
-      {/* LOGIN */}
       {!isLoggedIn ? (
         <div className="card">
           <h2 className="panelTitle">LOG IN</h2>
@@ -389,7 +393,6 @@ export default function App() {
         </div>
       ) : (
         <>
-          {/* WALLET */}
           <div className="topBar">
             <button className="btn dark" onClick={connectWallet} disabled={busy}>
               Cüzdanı Bağla
@@ -403,7 +406,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* ROLE SELECT */}
           <div className="card soft">
             <div className="roleRow">
               <div className="roleLeft">Sisteme Hangi Rol ile Gireceksiniz?</div>
@@ -418,7 +420,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* ADMIN */}
           {role === "admin" && (
             <div className="card">
               <h2 className="panelTitle">Admin Paneli</h2>
@@ -432,7 +433,6 @@ export default function App() {
             </div>
           )}
 
-          {/* PRODUCER */}
           {role === "producer" && (
             <div className="card">
               <h2 className="panelTitle">Üretici Paneli</h2>
@@ -446,16 +446,15 @@ export default function App() {
 
                 {createdBatchId && (
                   <div className="qrBox">
-                    <div className="muted">QR (Customer bu Batch ID ile geçmişi görür)</div>
-                    <QRCodeCanvas value={qrValue} size={180} />
-                    <div className="mono">{qrValue}</div>
+                    <div className="muted">QR (okutunca müşteri geçmiş sayfası açılır)</div>
+                    <QRCodeCanvas value={`${window.location.origin}?batchId=${qrValue}`} size={180} />
+                    <div className="mono">{`${window.location.origin}?batchId=${qrValue}`}</div>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* TRANSPORTER */}
           {role === "transporter" && (
             <div className="card">
               <h2 className="panelTitle">Taşıyıcı Paneli (Sensör)</h2>
@@ -471,7 +470,6 @@ export default function App() {
             </div>
           )}
 
-          {/* TRANSFER PANEL (producer / transporter / distributor için) */}
           {(role === "producer" || role === "transporter" || role === "distributor") && (
             <div className="card">
               <h2 className="panelTitle">
@@ -496,7 +494,6 @@ export default function App() {
             </div>
           )}
 
-          {/* RETAILER */}
           {role === "retailer" && (
             <div className="card">
               <h2 className="panelTitle">Market Paneli</h2>
@@ -513,7 +510,6 @@ export default function App() {
             </div>
           )}
 
-          {/* CUSTOMER */}
           {role === "customer" && (
             <div className="card">
               <h2 className="panelTitle">Müşteri / Ürün Geçmişi</h2>
@@ -559,12 +555,18 @@ export default function App() {
                       ))}
                     </ul>
                   )}
+
+                  <div className="histTitle">QR Kod</div>
+                  <div className="qrBox">
+                    <QRCodeCanvas value={`${window.location.origin}?batchId=${historyData.batch.batchId}`} size={180} />
+                    <div className="muted">Telefonla okut → aynı ürün geçmişi açılır (MetaMask gerekmez).</div>
+                    <div className="qrLink mono">{`${window.location.origin}?batchId=${historyData.batch.batchId}`}</div>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* STATUS */}
           {status && (
             <div className={`status ${status.startsWith("✅") ? "ok" : status.startsWith("⛓️") ? "mid" : "bad"}`}>
               {status}
@@ -575,4 +577,3 @@ export default function App() {
     </div>
   );
 }
-
