@@ -1,13 +1,21 @@
-// freshchain-ui/src/contract.js
+// src/contract.js
 
-export const CONTRACT_ADDRESS =
-  "0xC866226946D9467c834828Bfd3c2C9A3655e490F";
+export const CONTRACT_ADDRESS = "0x01085149D6A2e8cf64dDE2798a0A3Fd1779D579F"; // <- Remix deploy adresini yaz
 
+export const ACCOUNTS = {
+  admin: "0x93988b68Df34CBB8117BA2c834E52c9c4439DDa7",
+  producer: "0x604b9CF5B8B460cbF4af690eF311DbB98025385B",
+  distributor: "0xf6Df1CBEfcf9553AE4CbD913bECE7F5C637C0BF6",
+  transporter: "0x5e623DE69E5E635d0CE40a8EF85779b3b64D4DE3",
+  retailer: "0x61270330369206855495980D5b70Ce51d47de6eB",
+};
+
+
+export const SEPOLIA_CHAIN_ID_HEX = "0xaa36a7"; // 11155111
 
 
 export const CONTRACT_ABI = [
-  
-    {
+     {
       "inputs": [
         {
           "internalType": "uint256",
